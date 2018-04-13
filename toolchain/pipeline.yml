@@ -1,6 +1,6 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Continuous delivery pipeline of a single-page application to S3
+Description: Continuous delivery pipeline of a simple Lambda webapp
 Parameters:
   GitHubUser:
     Type: String
@@ -9,7 +9,7 @@ Parameters:
   GitHubRepo:
     Type: String
     Description: GitHub Repo to pull from. Only the Name. not the URL
-    Default: "sample-s3-delivery"
+    Default: "drifter"
   GitHubBranch:
     Type: String
     Description: GitHub Branch
@@ -18,18 +18,7 @@ Parameters:
     NoEcho: true
     Type: String
     Description: Secret. It might look something like 9b189a1654643522561f7b3ebd44a1531a4287af OAuthToken with access to Repo. Go to https://github.com/settings/tokens
-  BuildType:
-    Type: String
-    Default: "linuxContainer"
-    Description: The build container type to use for building the app
-  BuildComputeType:
-    Type: String
-    Default: "BUILD_GENERAL1_SMALL"
-    Description: The build compute type to use for building the app
-  BuildImage:
-    Type: String
-    Default: "aws/codebuild/ubuntu-base:14.04"
-    Description: The build image to use for building the app
+    MinLength: 40
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
@@ -40,12 +29,6 @@ Metadata:
           - GitHubUser
           - GitHubRepo
           - GitHubBranch
-      - Label:
-          default: "Build Configuration"
-        Parameters:
-          - BuildType
-          - BuildComputeType
-          - BuildImage
     ParameterLabels:
       GitHubToken:
         default: GitHub OAuth2 Token
@@ -55,12 +38,6 @@ Metadata:
         default: GitHub Repository Name
       GitHubBranch: 
         default: GitHub Branch Name
-      BuildType: 
-        default: CodeBuild type
-      BuildComputeType: 
-        default: CodeBuild instance type
-      BuildImage: 
-        default: CodeBuild image
 Resources:
   CodeBuildRole:
     Type: AWS::IAM::Role
@@ -86,27 +63,55 @@ Resources:
     Type: AWS::CodeBuild::Project
     DependsOn: CodeBuildRole
     Properties:
-      Name: !Sub ${AWS::StackName}-Package
+      Name: !Sub ${AWS::StackName}-package
       Description: Package application for deployment
       ServiceRole: !GetAtt CodeBuildRole.Arn
       Artifacts:
         Type: CODEPIPELINE
       Environment:
-        Type: !Ref BuildType
-        ComputeType: !Ref BuildComputeType
-        Image: !Sub ${BuildImage}
+        Type: linuxContainer
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/ubuntu-base:14.04
+        EnvironmentVariables:
+          - Name: S3_BUCKET
+            Value: !Ref PipelineBucket
       Source:
         Type: CODEPIPELINE
-        BuildSpec: !Sub |
-          version: 0.1
-          phases:
-            build:
-              commands:
-                - echo "hello"
-          artifacts:
-            type: zip
-            files:
-              - index.html
+        BuildSpec: toolchain/buildspec-package.yml
+      TimeoutInMinutes: 10
+  CodeBuildDrift:
+    Type: AWS::CodeBuild::Project
+    DependsOn: CodeBuildRole
+    Properties:
+      Name: !Sub ${AWS::StackName}-drift
+      Description: Check for CloudFormation drift
+      ServiceRole: !GetAtt CodeBuildRole.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: linuxContainer
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/ubuntu-base:14.04
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: toolchain/buildspec-drift.yml
+      TimeoutInMinutes: 10
+  CodeBuildNag:
+    Type: AWS::CodeBuild::Project
+    DependsOn: CodeBuildRole
+    Properties:
+      Name: !Sub ${AWS::StackName}-nag
+      Description: Run cfn_nag
+      ServiceRole: !GetAtt CodeBuildRole.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: linuxContainer
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/ubuntu-base:14.04
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: toolchain/buildspec-nag.yml
       TimeoutInMinutes: 10
   CodePipelineRole:
     Type: AWS::IAM::Role
@@ -152,6 +157,7 @@ Resources:
   Pipeline:
     Type: AWS::CodePipeline::Pipeline
     Properties:
+      Name: !Sub ${AWS::StackName}
       RoleArn: !GetAtt CodePipelineRole.Arn
       Stages:
       - Name: Source
@@ -182,9 +188,33 @@ Resources:
           InputArtifacts:
           - Name: SourceOutput
           OutputArtifacts:
-          - Name: BuildOutput
+          - Name: PackageOutput
           Configuration:
             ProjectName: !Ref CodeBuildPackage
+          RunOrder: 1
+      - Name: Deploy
+        Actions:
+        - Name: CfnNag
+          ActionTypeId:
+            Category: Test
+            Owner: AWS
+            Version: '1'
+            Provider: CodeBuild
+          InputArtifacts:
+          - Name: PackageOutput
+          Configuration:
+            ProjectName: !Ref CodeBuildNag
+          RunOrder: 1
+        - Name: CheckDrift
+          ActionTypeId:
+            Category: Test
+            Owner: AWS
+            Version: '1'
+            Provider: CodeBuild
+          InputArtifacts:
+          - Name: PackageOutput
+          Configuration:
+            ProjectName: !Ref CodeBuildDrift
           RunOrder: 1
       ArtifactStore:
         Type: S3

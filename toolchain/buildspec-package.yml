@@ -1,0 +1,17 @@
+version: 0.2
+
+phases:
+  pre_build: 
+    commands:
+      - go vet .
+  build:
+    commands:
+      - go build -o main
+      - aws cloudformation package --template-file app.yml --s3-bucket ${S3_BUCKET} --output-template-file packaged.yml
+
+artifacts:
+  type: zip
+  files:
+  - toolchain/buildspec-drift.yml
+  - toolchain/buildspec-nag.yml
+  - app-packaged.yml
