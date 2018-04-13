@@ -3,7 +3,7 @@ phases:
   install:
     commands:
     - mkdir -p ~/.aws/models/cfn/2010-05-15
-    - cp cfn-service-2.json ~/.aws/models/cfn/2010-05-15/service-2.json
+    - cp toolchain/cfn-service-2.json ~/.aws/models/cfn/2010-05-15/service-2.json
   build:
     commands:
     - cat app-packaged.yml
