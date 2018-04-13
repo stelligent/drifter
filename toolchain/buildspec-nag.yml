@@ -1,5 +1,8 @@
 version: 0.2
 phases:
+  install:
+    commands:
+      gem install cfn-nag
   build:
     commands:
-    - cat app-packaged.yml
+      - cfn_nag app-packaged.yml
