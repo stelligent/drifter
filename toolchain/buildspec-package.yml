@@ -16,3 +16,4 @@ artifacts:
   - toolchain/buildspec-drift.yml
   - toolchain/buildspec-nag.yml
   - app-packaged.yml
+  - cfn-service-2.json

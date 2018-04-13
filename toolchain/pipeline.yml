@@ -39,6 +39,26 @@ Metadata:
       GitHubBranch: 
         default: GitHub Branch Name
 Resources:
+  CloudFormationRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - cloudformation.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: "/"
+      Policies:
+      - PolicyName: cloudformation-service
+        PolicyDocument:
+          Statement:
+          - Effect: Allow
+            Action: "*"
+            Resource: "*"
+          Version: '2012-10-17'
   CodeBuildRole:
     Type: AWS::IAM::Role
     Properties:
@@ -146,8 +166,6 @@ Resources:
             Effect: Allow
           - Action:
             - s3:*
-            - cloudformation:*
-            - ecs:*
             - iam:PassRole
             Resource: "*"
             Effect: Allow
@@ -205,7 +223,7 @@ Resources:
           Configuration:
             ProjectName: !Ref CodeBuildNag
           RunOrder: 1
-        - Name: CheckDrift
+        - Name: DriftDetection
           ActionTypeId:
             Category: Test
             Owner: AWS
@@ -216,6 +234,35 @@ Resources:
           Configuration:
             ProjectName: !Ref CodeBuildDrift
           RunOrder: 1
+        - Name: CreateChangeSet
+          InputArtifacts:
+          - Name: PackageOutput
+          ActionTypeId:
+            Category: Deploy
+            Owner: AWS
+            Version: 1
+            Provider: CloudFormation
+          Configuration:
+            ActionMode: CHANGE_SET_REPLACE
+            Capabilities: CAPABILITY_NAMED_IAM
+            StackName: drifter-app
+            TemplatePath: PackageOutput::app-packaged.yml
+            ChangeSetName: drifter-app-deployment
+            RoleArn: !GetAtt CloudFormationRole.Arn
+          RunOrder: 2
+        - Name: ExecuteChangeSet
+          InputArtifacts:
+          - Name: PackageOutput
+          ActionTypeId:
+            Category: Deploy
+            Owner: AWS
+            Version: 1
+            Provider: CloudFormation
+          Configuration:
+            ActionMode: CHANGE_SET_EXECUTE
+            StackName: drifter-app
+            ChangeSetName: drifter-app-deployment
+          RunOrder: 3 
       ArtifactStore:
         Type: S3
         Location: !Ref PipelineBucket
