@@ -71,7 +71,7 @@ Resources:
       Environment:
         Type: linuxContainer
         ComputeType: BUILD_GENERAL1_SMALL
-        Image: aws/codebuild/ubuntu-base:14.04
+        Image: aws/codebuild/golang:1.10
         EnvironmentVariables:
           - Name: S3_BUCKET
             Value: !Ref PipelineBucket
