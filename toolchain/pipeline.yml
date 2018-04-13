@@ -169,6 +169,10 @@ Resources:
             - iam:PassRole
             Resource: "*"
             Effect: Allow
+          - Action:
+            - cloudformation:*
+            Resource: "*"
+            Effect: Allow
           Version: '2012-10-17'
   PipelineBucket:
     Type: AWS::S3::Bucket
