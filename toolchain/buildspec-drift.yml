@@ -6,4 +6,4 @@ phases:
     - cp toolchain/cfn-service-2.json ~/.aws/models/cfn/2010-05-15/service-2.json
   build:
     commands:
-    - ./toolchain/check-drift.sh drifter-app
+    - /bin/sh toolchain/check-drift.sh drifter-app
