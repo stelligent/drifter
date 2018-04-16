@@ -17,7 +17,7 @@ DRIFT_DETECTION_ID=$(aws cfn detect-stack-drift --stack-name ${STACK_NAME} --que
 echo -n "Waiting for drift detection to complete..."
 while true; do
     DETECTION_STATUS=$(aws cfn describe-stack-drift-detection-status --stack-drift-detection-id ${DRIFT_DETECTION_ID} --query DetectionStatus --output text) 
-    if [ "DETECTION_IN_PROGRESS" == ${DETECTION_STATUS} ]; then 
+    if [ "DETECTION_IN_PROGRESS" = "${DETECTION_STATUS}" ]; then 
         echo -n "."
         sleep 1 
     else
@@ -28,7 +28,7 @@ while true; do
 done
 
 ### Describe the drift details
-if [ "DRIFTED" == ${STACK_DRIFT_STATUS} ]; then 
+if [ "DRIFTED" = "${STACK_DRIFT_STATUS}" ]; then 
     aws cfn describe-stack-resource-drifts \
         --stack-name ${STACK_NAME} \
         --query 'StackResourceDrifts[?StackResourceDriftStatus!=`IN_SYNC`].{Type:ResourceType, Resource:LogicalResourceId, Status:StackResourceDriftStatus, Diff:PropertyDifferences}' >&2 
