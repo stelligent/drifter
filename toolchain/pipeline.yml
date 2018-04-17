@@ -202,9 +202,15 @@ Resources:
           - sts:AssumeRole
       Path: "/"
       Policies:
-      - PolicyName: cloudformation-service
+      - PolicyName: deploy-serverless-application
         PolicyDocument:
           Statement:
+          - Action:
+            - s3:GetObject
+            - s3:GetObjectVersion
+            Resource: 
+            - !Sub arn:aws:s3:::${PipelineBucket}/*
+            Effect: Allow
           - Action:
             - lambda:AddPermission
             - lambda:CreateAlias
@@ -235,6 +241,11 @@ Resources:
             Effect: Allow
             Resource: 
             - !Sub arn:aws:iam::${AWS::AccountId}:role/drifter-app-HelloFunctionRole-*
+          - Action:
+            - cloudformation:CreateChangeSet
+            Resource: 
+            - !Sub arn:aws:cloudformation:${AWS::Region}:aws:transform/Serverless-2016-10-31
+            Effect: Allow
           Version: '2012-10-17'
   CodeBuildRole:
     Type: AWS::IAM::Role
@@ -248,8 +259,13 @@ Resources:
           Action:
           - sts:AssumeRole
       Path: "/"
+      
+      ## Add read only access to all resources so drift-detection works
+      ManagedPolicyArns:
+      -  arn:aws:iam::aws:policy/ReadOnlyAccess
+      
       Policies:
-      - PolicyName: codebuild-service
+      - PolicyName: codepipeline-integration
         PolicyDocument:
           Statement:
           - Action:
@@ -291,9 +307,13 @@ Resources:
             - codepipeline:PutJobSuccessResult
             Effect: Allow
             Resource: '*'
+      - PolicyName: cloudformation-drift-detection
+        PolicyDocument:
+          Statement:
           - Action:
             - cloudformation:DetectStackDrift
             - cloudformation:DescribeStackResourceDrifts
+            - cloudformation:ListStackResources
             Effect: Allow
             Resource: 
             - !Sub arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/drifter-app/*
@@ -342,23 +362,22 @@ Resources:
             Resource: 
             - !Sub arn:aws:s3:::${PipelineBucket}
             Effect: Allow
-          - Action:
-            - iam:PassRole
-            Resource: 
-            - !GetAtt CloudFormationRole.Arn
-            Effect: Allow
+      - PolicyName: cloudformation-service
+        PolicyDocument:
+          Statement:
           - Action:
             - cloudformation:CreateChangeSet
             - cloudformation:DescribeStacks
             - cloudformation:DescribeChangeSet
+            - cloudformation:ExecuteChangeSet
+            - cloudformation:DeleteChangeSet
             Resource: 
             - !Sub arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/drifter-app/*
             Effect: Allow
           - Action:
-            - cloudformation:ExecuteChangeSet
-            - cloudformation:DeleteChangeSet
+            - iam:PassRole
             Resource: 
-            - !Sub arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:changeSet/drifter-app-deployment
+            - !GetAtt CloudFormationRole.Arn
             Effect: Allow
           Version: '2012-10-17'
 Outputs:

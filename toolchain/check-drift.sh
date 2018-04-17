@@ -12,17 +12,17 @@ STACK_NAME=$1
 
 ### Initiate drift detection
 DRIFT_DETECTION_ID=$(aws cfn detect-stack-drift --stack-name ${STACK_NAME} --query StackDriftDetectionId --output text)
-echo ${DRIFT_DETECTION_ID}
 
 ### Wait for detection to complete
 echo -n "Waiting for drift detection to complete..."
 while true; do
     aws cfn describe-stack-drift-detection-status --stack-drift-detection-id ${DRIFT_DETECTION_ID} 
     DETECTION_STATUS=$(aws cfn describe-stack-drift-detection-status --stack-drift-detection-id ${DRIFT_DETECTION_ID} --query DetectionStatus --output text) 
-    echo "${DETECTION_STATUS}"
     if [ "DETECTION_IN_PROGRESS" = "${DETECTION_STATUS}" ]; then 
         echo -n "."
         sleep 1 
+    elif [ "DETECTION_FAILED" = "${DETECTION_STATUS}" ]; then 
+        die $(aws cfn describe-stack-drift-detection-status --stack-drift-detection-id ${DRIFT_DETECTION_ID} --query DetectionStatusReason --output text)
     else
         STACK_DRIFT_STATUS=$(aws cfn describe-stack-drift-detection-status --stack-drift-detection-id ${DRIFT_DETECTION_ID} --query StackDriftStatus --output text) 
         echo ${STACK_DRIFT_STATUS}
