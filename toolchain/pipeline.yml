@@ -224,11 +224,14 @@ Resources:
             - lambda:RemovePermission
             - lambda:PublishVersion
             - lambda:InvokeFunction
+            Resource:
+            - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:drifter-app-HelloFunction-*
+            Effect: Allow
+          - Action:
             - lambda:ListTags
             - lambda:TagResource
             - lambda:UntagResource
-            Resource:
-            - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:drifter-app-HelloFunction-*
+            Resource: '*'
             Effect: Allow
           - Action:
             - iam:CreateRole
