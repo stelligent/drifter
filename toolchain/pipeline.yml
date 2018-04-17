@@ -201,7 +201,6 @@ Resources:
           Action:
           - sts:AssumeRole
       Path: "/"
-      
       Policies:
       - PolicyName: deploy-serverless-application
         PolicyDocument:
@@ -228,6 +227,14 @@ Resources:
             - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:drifter-app-HelloFunction-*
             Effect: Allow
           - Action:
+            - apigateway:GET
+            - apigateway:POST
+            - apigateway:PUT
+            - apigateway:DELETE
+            Resource:
+            - !Sub arn:aws:apigateway:${AWS::Region}::/restapis/*
+            Effect: Allow
+          - Action:
             - lambda:ListTags
             - lambda:TagResource
             - lambda:UntagResource
@@ -240,6 +247,7 @@ Resources:
             - iam:GetRole
             - iam:PutRolePolicy
             - iam:DeleteRolePolicy
+            - iam:DetachRolePolicy
             - iam:GetRolePolicy
             - iam:ListRolePolicies
             - iam:UpdateAssumeRolePolicy

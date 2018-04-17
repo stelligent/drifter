@@ -10,6 +10,9 @@ die () {
 [ "$#" -eq 1 ] || die "Usage: $0 [stack_name]"
 STACK_NAME=$1
 
+### Check if stack exists yet
+aws cloudformation describe-stacks --stack-name ${STACK_NAME} > /dev/null 2>&1 || exit 0
+
 ### Initiate drift detection
 DRIFT_DETECTION_ID=$(aws cfn detect-stack-drift --stack-name ${STACK_NAME} --query StackDriftDetectionId --output text)
 
