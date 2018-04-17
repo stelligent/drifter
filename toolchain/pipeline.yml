@@ -291,6 +291,16 @@ Resources:
             - codepipeline:PutJobSuccessResult
             Effect: Allow
             Resource: '*'
+          - Action:
+            - cloudformation:DetectStackDrift
+            - cloudformation:DescribeStackResourceDrifts
+            Effect: Allow
+            Resource: 
+            - !Sub arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/drifter-app/*
+          - Action:
+            - cloudformation:DescribeStackDriftDetectionStatus
+            Effect: Allow
+            Resource: '*'
           Version: '2012-10-17'
   CodePipelineRole:
     Type: AWS::IAM::Role
