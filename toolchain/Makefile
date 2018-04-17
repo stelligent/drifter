@@ -7,14 +7,14 @@ TOOLCHAIN_STACK_NAME ?= drifter-toolchain
 default: check
 
 check:
-	@aws cloudformation validate-template --template-body file://toolchain/pipeline.yml
+	@aws cloudformation validate-template --template-body file://pipeline.yml
 
-toolchain: check
+deploy: check
 	-@aws cloudformation describe-stacks --stack-name $(TOOLCHAIN_STACK_NAME) > /dev/null 2>&1; \
 	if [ $$? -eq 0 ]; then \
 		echo "[INFO] Updating cloudformation stack $(TOOLCHAIN_STACK_NAME)"; \
 		aws cloudformation update-stack --stack-name $(TOOLCHAIN_STACK_NAME) \
-		  --template-body file://toolchain/pipeline.yml \
+		  --template-body file://pipeline.yml \
           --capabilities CAPABILITY_NAMED_IAM \
           --parameters ParameterKey=GitHubUser,ParameterValue="$(GITHUB_USER)" \
                        ParameterKey=GitHubRepo,ParameterValue="$(GITHUB_REPO)" \
@@ -26,7 +26,7 @@ toolchain: check
 	else \
 		echo "[INFO] Creating cloudformation stack $(TOOLCHAIN_STACK_NAME)"; \
 		aws cloudformation create-stack --stack-name $(TOOLCHAIN_STACK_NAME)  \
-		  --template-body file://toolchain/pipeline.yml \
+		  --template-body file://pipeline.yml \
           --capabilities CAPABILITY_NAMED_IAM \
           --parameters ParameterKey=GitHubUser,ParameterValue="$(GITHUB_USER)" \
                        ParameterKey=GitHubRepo,ParameterValue="$(GITHUB_REPO)" \

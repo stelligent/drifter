@@ -1,8 +1,14 @@
-![pipeline](pipeline.png)
+# Overview
+This repo contains a simple API written in Go that runs as a Lambda function behind API Gateway.  The `toolchain` directory contains CodePipeline and CodeBuild spec files to define a continuous delivery pipeline for provisioning the API.  
+
+Additionally, the pipeline leverages drift detection to fail the pipeline if manual changes have been made to infrastructure between deployments.
 
 # Pipeline
 To provision the drifter pipeline, fork this repo and then run the following with your GitHub personal access token:
 
 ```
-make toolchain GITHUB_TOKEN=xxxxxxxxxxxxx GITHUB_USER=your_user_name
+cd toolchain
+make deploy GITHUB_TOKEN=xxxxxxxxxxxxx GITHUB_USER=your_user_name
 ```
+
+![pipeline](pipeline.png)
