@@ -13,8 +13,5 @@ phases:
 artifacts:
   type: zip
   files:
-  - toolchain/buildspec-nag.yml
-  - toolchain/check-drift.sh
-  - toolchain/buildspec-drift.yml
-  - toolchain/cfn-service-2.json
+  - toolchain/*
   - app-packaged.yml
