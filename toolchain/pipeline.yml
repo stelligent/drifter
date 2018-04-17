@@ -201,6 +201,7 @@ Resources:
           Action:
           - sts:AssumeRole
       Path: "/"
+      
       Policies:
       - PolicyName: deploy-serverless-application
         PolicyDocument:
@@ -217,6 +218,7 @@ Resources:
             - lambda:CreateFunction
             - lambda:DeleteFunction
             - lambda:UpdateFunctionCode
+            - lambda:GetFunctionConfiguration
             - lambda:UpdateFunctionConfiguration
             - lambda:UpdateAlias
             - lambda:RemovePermission
@@ -312,7 +314,9 @@ Resources:
           Statement:
           - Action:
             - cloudformation:DetectStackDrift
+            - cloudformation:DetectStackResourceDrift
             - cloudformation:DescribeStackResourceDrifts
+            - cloudformation:DescribeStackDriftDetectionStatus
             - cloudformation:ListStackResources
             Effect: Allow
             Resource: 
