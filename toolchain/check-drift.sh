@@ -19,6 +19,7 @@ echo -n "Waiting for drift detection to complete..."
 while true; do
     aws cfn describe-stack-drift-detection-status --stack-drift-detection-id ${DRIFT_DETECTION_ID} 
     DETECTION_STATUS=$(aws cfn describe-stack-drift-detection-status --stack-drift-detection-id ${DRIFT_DETECTION_ID} --query DetectionStatus --output text) 
+    echo "${DETECTION_STATUS}"
     if [ "DETECTION_IN_PROGRESS" = "${DETECTION_STATUS}" ]; then 
         echo -n "."
         sleep 1 

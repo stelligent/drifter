@@ -349,8 +349,10 @@ Resources:
             Effect: Allow
           - Action:
             - cloudformation:CreateChangeSet
+            - cloudformation:DescribeStacks
+            - cloudformation:DescribeChangeSet
             Resource: 
-            - !Sub arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/drifter-app
+            - !Sub arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/drifter-app/*
             Effect: Allow
           - Action:
             - cloudformation:ExecuteChangeSet
