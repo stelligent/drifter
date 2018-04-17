@@ -39,46 +39,6 @@ Metadata:
       GitHubBranch: 
         default: GitHub Branch Name
 Resources:
-  CloudFormationRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Statement:
-        - Effect: Allow
-          Principal:
-            Service:
-            - cloudformation.amazonaws.com
-          Action:
-          - sts:AssumeRole
-      Path: "/"
-      Policies:
-      - PolicyName: cloudformation-service
-        PolicyDocument:
-          Statement:
-          - Effect: Allow
-            Action: "*"
-            Resource: "*"
-          Version: '2012-10-17'
-  CodeBuildRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Statement:
-        - Effect: Allow
-          Principal:
-            Service:
-            - codebuild.amazonaws.com
-          Action:
-          - sts:AssumeRole
-      Path: "/"
-      Policies:
-      - PolicyName: codebuild-service
-        PolicyDocument:
-          Statement:
-          - Effect: Allow
-            Action: "*"
-            Resource: "*"
-          Version: '2012-10-17'
   CodeBuildPackage:
     Type: AWS::CodeBuild::Project
     DependsOn: CodeBuildRole
@@ -133,47 +93,6 @@ Resources:
         Type: CODEPIPELINE
         BuildSpec: toolchain/buildspec-nag.yml
       TimeoutInMinutes: 10
-  CodePipelineRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Statement:
-        - Effect: Allow
-          Principal:
-            Service:
-            - codepipeline.amazonaws.com
-          Action:
-          - sts:AssumeRole
-      Path: "/"
-      Policies:
-      - PolicyName: codepipeline-service
-        PolicyDocument:
-          Statement:
-          - Action:
-            - codebuild:*
-            Resource: "*"
-            Effect: Allow
-          - Action:
-            - s3:GetObject
-            - s3:GetObjectVersion
-            - s3:GetBucketVersioning
-            Resource: "*"
-            Effect: Allow
-          - Action:
-            - s3:PutObject
-            Resource:
-            - arn:aws:s3:::codepipeline*
-            Effect: Allow
-          - Action:
-            - s3:*
-            - iam:PassRole
-            Resource: "*"
-            Effect: Allow
-          - Action:
-            - cloudformation:*
-            Resource: "*"
-            Effect: Allow
-          Version: '2012-10-17'
   PipelineBucket:
     Type: AWS::S3::Bucket
   Pipeline:
@@ -270,6 +189,166 @@ Resources:
       ArtifactStore:
         Type: S3
         Location: !Ref PipelineBucket
+  CloudFormationRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - cloudformation.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: "/"
+      Policies:
+      - PolicyName: cloudformation-service
+        PolicyDocument:
+          Statement:
+          - Action:
+            - lambda:AddPermission
+            - lambda:CreateAlias
+            - lambda:CreateFunction
+            - lambda:DeleteFunction
+            - lambda:UpdateFunctionCode
+            - lambda:UpdateFunctionConfiguration
+            - lambda:UpdateAlias
+            - lambda:RemovePermission
+            - lambda:PublishVersion
+            - lambda:InvokeFunction
+            - lambda:ListTags
+            - lambda:TagResource
+            - lambda:UntagResource
+            Resource:
+            - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:drifter-app-HelloFunction-*
+            Effect: Allow
+          - Action:
+            - iam:CreateRole
+            - iam:DeleteRole
+            - iam:PassRole
+            - iam:GetRole
+            - iam:PutRolePolicy
+            - iam:DeleteRolePolicy
+            - iam:GetRolePolicy
+            - iam:ListRolePolicies
+            - iam:UpdateAssumeRolePolicy
+            Effect: Allow
+            Resource: 
+            - !Sub arn:aws:iam::${AWS::AccountId}:role/drifter-app-HelloFunctionRole-*
+          Version: '2012-10-17'
+  CodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - codebuild.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: "/"
+      Policies:
+      - PolicyName: codebuild-service
+        PolicyDocument:
+          Statement:
+          - Action:
+            - s3:PutObject
+            - s3:GetObject
+            - s3:GetObjectVersion
+            Resource: 
+            - !Sub arn:aws:s3:::${PipelineBucket}/*
+            Effect: Allow
+          - Action:
+            - s3:ListBucket
+            - s3:ListBucketMultipartUploads
+            - s3:GetBucketVersioning
+            Resource: 
+            - !Sub arn:aws:s3:::${PipelineBucket}
+            Effect: Allow
+          - Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            Resource:
+            - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${AWS::StackName}-*
+            - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${AWS::StackName}-*:*
+            Effect: Allow
+          - Action:
+            - codepipeline:GetPipelineState
+            Effect: Allow
+            Resource:
+            - !Sub arn:aws:codepipeline:${AWS::Region}:${AWS::AccountId}:${AWS::StackName}
+          - Action:
+            - codepipeline:GetJobDetails
+            - codepipeline:PollForJobs
+            Effect: Allow
+            Resource:
+            - !Sub arn:aws:codepipeline:${AWS::Region}:${AWS::AccountId}:${AWS::StackName}
+          - Action:
+            - codepipeline:AcknowledgeJob
+            - codepipeline:PutJobFailureResult
+            - codepipeline:PutJobSuccessResult
+            Effect: Allow
+            Resource: '*'
+          Version: '2012-10-17'
+  CodePipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - codepipeline.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: "/"
+      Policies:
+      - PolicyName: codepipeline-service
+        PolicyDocument:
+          Statement:
+          - Action:
+            - codebuild:StartBuild
+            - codebuild:StopBuild
+            - codebuild:BatchGetProjects
+            - codebuild:BatchGetBuilds
+            Resource: 
+            - !GetAtt CodeBuildPackage.Arn
+            - !GetAtt CodeBuildDrift.Arn
+            - !GetAtt CodeBuildNag.Arn
+            Effect: Allow
+          - Action:
+            - s3:PutObject
+            - s3:GetObject
+            - s3:GetObjectVersion
+            Resource: 
+            - !Sub arn:aws:s3:::${PipelineBucket}/*
+            Effect: Allow
+          - Action:
+            - s3:ListBucket
+            - s3:ListBucketMultipartUploads
+            - s3:GetBucketVersioning
+            Resource: 
+            - !Sub arn:aws:s3:::${PipelineBucket}
+            Effect: Allow
+          - Action:
+            - iam:PassRole
+            Resource: 
+            - !GetAtt CloudFormationRole.Arn
+            Effect: Allow
+          - Action:
+            - cloudformation:CreateChangeSet
+            Resource: 
+            - !Sub arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/drifter-app
+            Effect: Allow
+          - Action:
+            - cloudformation:ExecuteChangeSet
+            - cloudformation:DeleteChangeSet
+            Resource: 
+            - !Sub arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:changeSet/drifter-app-deployment
+            Effect: Allow
+          Version: '2012-10-17'
 Outputs:
   CodePipelineUrl:
     Value: !Sub https://console.aws.amazon.com/codepipeline/home?region=${AWS::Region}#/view/${Pipeline}
