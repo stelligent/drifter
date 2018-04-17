@@ -230,8 +230,10 @@ Resources:
             - apigateway:GET
             - apigateway:POST
             - apigateway:PUT
+            - apigateway:PATCH
             - apigateway:DELETE
             Resource:
+            - !Sub arn:aws:apigateway:${AWS::Region}::/restapis
             - !Sub arn:aws:apigateway:${AWS::Region}::/restapis/*
             Effect: Allow
           - Action:
@@ -247,6 +249,7 @@ Resources:
             - iam:GetRole
             - iam:PutRolePolicy
             - iam:DeleteRolePolicy
+            - iam:AttachRolePolicy
             - iam:DetachRolePolicy
             - iam:GetRolePolicy
             - iam:ListRolePolicies

@@ -12,3 +12,7 @@ Resources:
           Properties:
             Path: /
             Method: get
+Outputs:
+  ApiUrl:
+    Description: API URL
+    Value: !Sub https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/${ServerlessRestApiProdStage}
