@@ -137,14 +137,15 @@ Resources:
         Actions:
         - Name: CfnNag
           ActionTypeId:
-            Category: Test
+            Category: Invoke
             Owner: AWS
             Version: '1'
-            Provider: CodeBuild
+            Provider: Lambda
           InputArtifacts:
           - Name: PackageOutput
           Configuration:
-            ProjectName: !Ref CodeBuildNag
+            FunctionName: cfn-nag-pipeline
+            UserParameters: app-packages.yml
           RunOrder: 1
         - Name: DriftDetection
           ActionTypeId:
@@ -379,6 +380,15 @@ Resources:
             - s3:GetBucketVersioning
             Resource: 
             - !Sub arn:aws:s3:::${PipelineBucket}
+            Effect: Allow
+          - Action:
+            - lambda:ListFunctions
+            Resource: '*'
+            Effect: Allow
+          - Action:
+            - lambda:InvokeFunction
+            Resource:
+            - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:cfn-nag-pipeline
             Effect: Allow
       - PolicyName: cloudformation-service
         PolicyDocument:
