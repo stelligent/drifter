@@ -128,7 +128,7 @@ Resources:
           - Name: PackageOutput
           Configuration:
             FunctionName: cfn-nag-pipeline
-            UserParameters: app-packages.yml
+            UserParameters: app-packaged.yml
           RunOrder: 1
         - Name: DriftDetection
           ActionTypeId:
