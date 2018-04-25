@@ -14,7 +14,7 @@ func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	return events.APIGatewayProxyResponse{
 		Body: fmt.Sprintf("Hello world!"),
 		Headers: map[string]string{
-			"FeatureFlag": strconv.FormatBool(featureFlag),
+			"Feature-Flag": strconv.FormatBool(featureFlag),
 		},
 		StatusCode: 200,
 	}, err
