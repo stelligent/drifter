@@ -14,7 +14,7 @@ Resources:
             Method: get
       Environment:
         Variables:
-          FEATURE_FLAG: "off"
+          FEATURE_FLAG: true
 Outputs:
   Url:
     Description: URL
