@@ -2,8 +2,7 @@ version: 0.2
 phases:
   install:
     commands:
-    - mkdir -p ~/.aws/models/cloudformation/2010-05-15
-    - cp toolchain/cloudformation-service-2.json ~/.aws/models/cloudformation/2010-05-15/service-2.json
+    - pip install awscli --upgrade
   build:
     commands:
     - /bin/sh toolchain/check-drift.sh drifter-app
